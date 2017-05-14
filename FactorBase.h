@@ -8,17 +8,14 @@
 
 using namespace NTL;
 
-class FactorBaseGenerator {
+class FactorBase {
 private:
-    ZZ bound;
-    long countA;
-    long countR;
+    long count;
+    long smallInd;
 public:
-    std::vector<std::pair<ZZ, ZZ> > R;
-    std::vector<std::pair<ZZ, ZZ> > A;
-    FactorBaseGenerator();
-    void generate(ZZ bound, ZZ_pX f, ZZ_p m);
-
+    std::vector<ZZ> r;
+    FactorBase(long bound);
+    bool FactorBase::factor(long* f, const ZZ& n, ZZ& rem);
 };
 
 

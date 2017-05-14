@@ -5,23 +5,18 @@
 #ifndef DISCRETE_LOG_POLYNOMIALGENERATOR_H
 #define DISCRETE_LOG_POLYNOMIALGENERATOR_H
 #include<NTL/ZZ_p.h>
-#include<NTL/ZZ_pX.h>
+#include<NTL/ZZX.h>
 #include<NTL/ZZ.h>
 #include<NTL/RR.h>
 
-
-
 using namespace NTL;
 
-
-class PolynomialGenerator {
-private:
+class Polynomial {
+public:
     ZZ m;
     ZZ d;
-public:
-    PolynomialGenerator();
-    ZZ getM();
-    ZZ_pX generate();
+    ZZX f;
+    Polynomial();
 };
 
 
