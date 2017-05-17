@@ -1,25 +1,16 @@
 #include <NTL/RR.h>
+
 #include "FactorBase.h"
 
+#define DEBUG
+#ifdef DEBUG
+#include<iostream>
+#endif
 // TODO: test new class
 
 FactorBase::FactorBase(long bound)
 {
-    long q = 2;
-    long elem;
-    smallInd = 0;
-    while(q<bound)
-    {
-        elem = q;
-        r.push_back(elem);
-        count++;
-        std::cout<<"\n";
-        q = NextPrime(q+1);
-    }
-     while(r[smallInd] < TruncToZZ(sqrt(conv<RR>(r[r.size()-1]))))
-     {
-         ++smallInd;
-     }
+    setBound(bound);
 }
 
 inline ZZ rema(ZZ& q, ZZ a, ZZ b)
@@ -103,4 +94,30 @@ bool FactorBase::factor(long* f, const ZZ& _n, ZZ& rem)
     }
     rem = n;
     return false;
+}
+
+FactorBase::FactorBase() {
+    count = 0;
+    smallInd = -1;
+    r.reserve(0);
+}
+
+void FactorBase::setBound(long bound) {
+    long q = 2;
+    ZZ elem;
+    smallInd = 0;
+    while(q<bound)
+    {
+        elem = q;
+        r.push_back(elem);
+        count++;
+        q = NextPrime(q+1);
+#ifdef DEBUG
+            std::cerr<<q<<"\n";
+#endif
+    }
+    while(r[smallInd] < TruncToZZ(sqrt(conv<RR>(r[r.size()-1]))))
+    {
+        ++smallInd;
+    }
 }

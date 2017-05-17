@@ -15,8 +15,10 @@ private:
 public:
     std::vector<ZZ> r;
     FactorBase(long bound);
-    bool FactorBase::factor(long* f, const ZZ& n, ZZ& rem);
+    FactorBase();
+    void setBound(long bound);
+    bool factor(long* f, const ZZ& n, ZZ& rem);
 };
 
-
+inline ZZ rema(ZZ& q, ZZ a, ZZ b);
 #endif //DISCRETE_LOG_FACTORBASEGENERATOR_H
