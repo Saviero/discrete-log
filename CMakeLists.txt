@@ -12,6 +12,8 @@ set(SOURCE_FILES
         Polynomial.h
         AlgebraicFactorBase.cpp
         AlgebraicFactorBase.h
+        NumberFieldSieve.cpp
+        NumberFieldSieve.h
         )
 
 add_executable(discrete_log ${SOURCE_FILES})

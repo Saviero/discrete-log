@@ -14,10 +14,10 @@ private:
     long smallInd;
 public:
     std::vector<ZZ> r;
-    FactorBase(long bound);
+    FactorBase(ZZ bound);
     FactorBase();
-    void setBound(long bound);
-    bool factor(long* f, const ZZ& n, ZZ& rem);
+    void setBound(ZZ bound);
+    bool factor(std::vector<long>& f, const ZZ& n);
 };
 
 inline ZZ rema(ZZ& q, ZZ a, ZZ b);

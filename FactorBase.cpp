@@ -2,19 +2,22 @@
 
 #include "FactorBase.h"
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #include<iostream>
 #endif
 // TODO: test new class
 
-FactorBase::FactorBase(long bound)
+FactorBase::FactorBase(ZZ bound)
 {
     setBound(bound);
 }
 
 inline ZZ rema(ZZ& q, ZZ a, ZZ b)
 {
+#ifdef DEBUG
+    std::cerr<<"remainder params: "<<q<<" "<<a<<" "<<b<<"\n";
+#endif
     q = a/b;
     ZZ r = a%b;
     while(r < 0)
@@ -24,26 +27,26 @@ inline ZZ rema(ZZ& q, ZZ a, ZZ b)
     return r;
 }
 
-bool FactorBase::factor(long* f, const ZZ& _n, ZZ& rem)
+bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)
 {
-    ZZ n(_n);
-    if (f)
+    f.resize(r.size());
+    for(int i = 0; i < r.size(); ++i)
     {
-        memset(f, 0, sizeof(long)*r.size());
+        f[i] = 0;
     }
-    rem = 0;
+    ZZ n(_n);
     ZZ q;
     for(long i=0; i<smallInd; ++i)
     {
-        if(rema(q, n, r[i]) == 0)
+        if(n % r[i] == 0)
         {
-            n = q;
-            if (f) ++f[i];
+            n = n / r[i];
+            ++f[i];
         }
-        while(rema(q, n, r[i])  == 0)
+        while(n % r[i]  == 0)
         {
-            n = q;
-            if (f) ++f[i];
+            n = n / r[i];
+            ++f[i];
         }
 
         if(n == 1)
@@ -58,7 +61,7 @@ bool FactorBase::factor(long* f, const ZZ& _n, ZZ& rem)
         {
             if (n == r[i])
             {
-                if (f) ++f[i];
+                ++f[i];
                 return true;
             }
         }
@@ -66,15 +69,15 @@ bool FactorBase::factor(long* f, const ZZ& _n, ZZ& rem)
 
     for(long i=smallInd; i<r.size(); ++i)
     {
-        if(rema(q, n, r[i]) == 0)
+        if(n % r[i] == 0)
         {
-            n = q;
-            if (f) ++f[i];
+            n = n / r[i];
+            ++f[i];
         }
-        while(rema(q, n, r[i])  == 0)
+        while(n % r[i]  == 0)
         {
-            n = q;
-            if (f) ++f[i];
+            n = n / r[i];
+            ++f[i];
         }
         if(n <= r[r.size()-1])
         {
@@ -82,17 +85,16 @@ bool FactorBase::factor(long* f, const ZZ& _n, ZZ& rem)
             {
                 return true;
             }
-            for(long j=i+1; j<r.size(); ++i)
+            for(long j=i+1; j<r.size(); ++j)
             {
                 if (n == r[j])
                 {
-                    if (f) ++f[j];
+                    ++f[j];
                     return true;
                 }
             }
         }
     }
-    rem = n;
     return false;
 }
 
@@ -102,8 +104,8 @@ FactorBase::FactorBase() {
     r.reserve(0);
 }
 
-void FactorBase::setBound(long bound) {
-    long q = 2;
+void FactorBase::setBound(ZZ bound) {
+    ZZ q = ZZ(2);
     ZZ elem;
     smallInd = 0;
     while(q<bound)

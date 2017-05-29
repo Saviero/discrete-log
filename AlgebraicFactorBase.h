@@ -15,8 +15,9 @@ private:
     std::vector<ZZ> a;
     long num;
 public:
-    AlgebraicFactorBase(long bound, const Polynomial& f);
-    bool factor(long* f, const ZZ& a, ZZ& b, ZZ& rem);
+    AlgebraicFactorBase(ZZ bound, const Polynomial& f);
+    bool factor(std::vector<long>& f, const ZZ& a, const ZZ& b);
+    long getTotalSize();
 };
 
 

@@ -3,16 +3,16 @@
 //
 
 #include "AlgebraicFactorBase.h"
-//#define DEBUG
+//#define EVALP_DEBUG
 
 inline ZZ norm(const ZZ& a, const ZZ& b, const Polynomial& poly)
 {
-    ZZ* powersb = new ZZ;
+    std::vector<ZZ> powersb;
+    powersb.resize(deg(poly.f)+1);
     ZZ powerb = ZZ(1);
     ZZ powera = ZZ(1);
     ZZ answer = ZZ(0);
 
-    memset(powersb, 0, (deg(poly.f)+1)*sizeof(ZZ));
     for(long i=0; i<=deg(poly.f); ++i)
     {
         powersb[i] = powerb;
@@ -24,73 +24,77 @@ inline ZZ norm(const ZZ& a, const ZZ& b, const Polynomial& poly)
         answer += powera*poly.f[i]*powersb[deg(poly.f) - i];
         powera *= a;
     }
-
+#ifdef FACTOR_DEBUG
+    std::cerr<<"Norm for ("<<a<<", "<<b<<") is "<<answer<<"\n";
+#endif
     return answer;
 }
 
-bool AlgebraicFactorBase::factor(long *f, const ZZ& a, ZZ& b, ZZ &rem)
+bool AlgebraicFactorBase::factor(std::vector<long>& f, const ZZ& a, const ZZ& b)
 {
-    long* zfactor = new long;
+    std::vector<long> zfactor;
     ZZ n = a+b*poly.m;
-    ZZ nor = norm(a, b, poly);
-    ZZ zrem;
-    if(fb.factor(zfactor, n, zrem))
+    ZZ nor = abs(norm(a, b, poly));
+    if(fb.factor(zfactor, n))
     {
-        if (f)
-        {
-            memset(f, 0, sizeof(long)*(fb.r.size()+num));
-        }
+        f.resize(fb.r.size()+num);
         for(long i = 0; i<fb.r.size(); ++i)
         {
             f[i] = zfactor[i];
         }
-        ZZ q;
+        long j = 0;
         for(long i=0; i<this->a.size(); ++i)
         {
             if (this->a[i] != -1)
             {
-                if(rema(q, n, fb.r[i]) == 0)
+                f[fb.r.size()+j] = 0;
+                if(nor % fb.r[i] == 0)
                 {
-                    nor = q;
-                    if (f) ++f[fb.r.size()+i];
+                    nor = nor / fb.r[i];
+                    ++f[fb.r.size()+j];
                 }
-                while(rema(q, n, fb.r[i])  == 0)
+                while(nor % fb.r[i] == 0)
                 {
-                    nor = q;
-                    if (f) ++f[fb.r.size()+i];
+                    nor = nor / fb.r[i];
+                    ++f[fb.r.size()+j];
                 }
-
+                ++j;
                 if(nor == 1)
                 {
+#ifdef FACTOR_DEBUG
+                    std::cerr<<"Pair ("<<a<<", "<<b<<") factors completely\n";
+#endif
                     return true;
                 }
             }
         }
     }
-    else
-    {
-        return false;
-    }
-
+    return false;
 }
 
 inline ZZ_p evalp(const Polynomial& poly, const ZZ& x)
 {
-    ZZ_p answer = ZZ_p(0);
+#ifdef EVALP_DEBUG
+    std::cerr<<"Polynomial is "<<poly.f<<"\n"<<"P is "<<ZZ_p::modulus()<<"\n"<<"X is "<<x<<"\n";
+#endif
+    ZZ_p answer = ZZ_p(1);
     ZZ_p xp = conv<ZZ_p>(x);
-    for(long i=deg(poly.f); i>=0; ++i)
+    for(long i=deg(poly.f)-1; i>=0; --i)
     {
         answer *= xp;
         answer += conv<ZZ_p>(poly.f[i]);
     }
+#ifdef EVALP_DEBUG
+    std::cerr<<"Answer is "<<rep(answer)<<"\n";
+#endif
     return answer;
 }
 
-AlgebraicFactorBase::AlgebraicFactorBase(long bound, const Polynomial& _f)
+AlgebraicFactorBase::AlgebraicFactorBase(ZZ bound, const Polynomial& _f)
 {
     poly = _f;
     fb.setBound(bound);
-    a.reserve(fb.r.size());
+    a.resize(fb.r.size());
     num = 0;
     for(long i=0; i<a.size(); ++i)
     {
@@ -108,11 +112,15 @@ AlgebraicFactorBase::AlgebraicFactorBase(long bound, const Polynomial& _f)
             {
                 a[i] = r;
                 ++num;
-#ifdef DEBUG
-                std::cerr<<r<<"\n";
+#ifdef GEN_DEBUG
+                std::cerr<<"R for q = "<<q<<" is "<<r<<"\n";
 #endif
                 break;
             }
         }
     }
+}
+
+long AlgebraicFactorBase::getTotalSize() {
+    return num+fb.r.size();
 }
