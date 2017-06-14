@@ -3,14 +3,13 @@
 
 vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // TODO: make this work!
 {
-    long* answer = new long;
-    memset(answer, 0, sizeof(long)*conv<long>(f.d));
-
     // Moving to the field mod l
     ZZ_pPush push;
     ZZ_p::init(l);
     ZZ_pX poly = conv<ZZ_pX>(f.f);
-
+#ifdef DEBUG
+    std::cerr<<"Polynomial is: "<<poly<<std::endl;
+#endif
     // Determining epsilon
     vec_pair_ZZ_pX_long factorf = SquareFreeDecomp(poly);
     ZZ epsilon = l-1;
@@ -18,6 +17,9 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // T
     {
         epsilon = epsilon*(l-i->b)/GCD(epsilon, (l-i->b));
     }
+#ifdef DEBUG
+    std::cerr<<"Epsilon is: "<<epsilon<<std::endl;
+#endif;
 
     // Determining matrix M
     ZZ_p::init(l*l);
@@ -26,26 +28,63 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // T
     ZZX abpoly, mulpoly;
     SetCoeff(abpoly, 0, a);
     SetCoeff(abpoly, 1, b);
+
+#ifdef DEBUG
+    std::cerr<<"ABpoly is: "<<abpoly<<std::endl;
+#endif;
+
     for(unsigned long i=0; i<f.d; ++i)
     {
         ZZX mult;
         SetCoeff(mult, i, 1);
+
+#ifdef DEBUG
+        std::cerr<<"Mult is: "<<mult<<std::endl;
+#endif;
+
         mulpoly = abpoly*mult % f.f;
+
+#ifdef DEBUG
+        std::cerr<<"Mulpoly is: "<<mulpoly<<std::endl;
+#endif;
         for(unsigned long j = 0; j < f.d; ++j)
         {
-            m[i][j] = conv<ZZ_p>(coeff(mulpoly, j));
+            m[j][i] = conv<ZZ_p>(coeff(mulpoly, j));
         }
     }
 
+#ifdef DEBUG
+    std::cerr<<"Matrix M is:\n"<<m<<std::endl;
+#endif
+
     // Calculating lambdas
     m = power(m, epsilon);
+
+#ifdef DEBUG
+    std::cerr<<"Matrix M power epsilon is:\n"<<m<<std::endl;
+#endif
+
     vec_ZZ_p lambdas;
     vec_ZZ_p eye;
     eye.SetLength(conv<long>(f.d));
     eye[0] = ZZ_p(1);
     mul(lambdas, m, eye);
+
+#ifdef DEBUG
+    std::cerr<<"Lambdas is: "<<lambdas<<std::endl;
+#endif
+
     lambdas = lambdas - eye;
-    return conv<vec_ZZ>(lambdas);
+
+#ifdef DEBUG
+    std::cerr<<"Final lambdas is: "<<lambdas<<std::endl;
+#endif
+    vec_ZZ res = conv<vec_ZZ>(lambdas);
+    for(auto i = res.begin(); i<res.end(); ++i)
+    {
+        (*i) /= l;
+    }
+    return res;
 }
 
 mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s, const Polynomial& f, const AlgebraicFactorBase& base, const ZZ& v)

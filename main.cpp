@@ -28,10 +28,10 @@ int main()
     f.f = poly;
     f.d = ZZ(2);
     f.m = ZZ(31);
-    schir = schirokauer_map(ZZ(8), ZZ(7), ZZ(509), f);
+    schir = schirokauer_map(ZZ(9), ZZ(25), ZZ(509), f);
     for(int i=0; i<2; ++i)
     {
-        std::cout<<schir[i]/509<<" ";
+        std::cout<<schir[i]<<" ";
     }
     return 0;
 }
