@@ -27,7 +27,7 @@ inline ZZ rema(ZZ& q, ZZ a, ZZ b)
     return r;
 }
 
-bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)
+bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)const
 {
     f.resize(r.size());
     for(int i = 0; i < r.size(); ++i)

@@ -17,7 +17,7 @@ public:
     FactorBase(ZZ bound);
     FactorBase();
     void setBound(ZZ bound);
-    bool factor(std::vector<long>& f, const ZZ& n);
+    bool factor(std::vector<long>& f, const ZZ& n)const;
 };
 
 inline ZZ rema(ZZ& q, ZZ a, ZZ b);

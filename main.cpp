@@ -10,16 +10,28 @@ int main()
     ZZ p = NextPrime(ZZ(1000000));
     std::cout<<p<<std::endl;
     ZZ_p::init(p);
-    mat_ZZ* sieveres;
+
+
+    /*mat_ZZ* sieveres;
     std::vector<std::pair<ZZ, ZZ>> pairs;
     sieveres = sieve(pairs);
+    std::cout<<(*sieveres)<<"\n";*/
 
 
-    /*long* schir;
-    schir = schirokauer_map(ZZ(5), ZZ(7), ZZ(13), 3);
-    for(int i=0; i<3; ++i)
+
+    vec_ZZ schir;
+    Polynomial f;
+    ZZX poly;
+    SetCoeff(poly, 0, ZZ(27));
+    SetCoeff(poly, 1, ZZ(1));
+    SetCoeff(poly, 2, ZZ(1));
+    f.f = poly;
+    f.d = ZZ(2);
+    f.m = ZZ(31);
+    schir = schirokauer_map(ZZ(8), ZZ(7), ZZ(509), f);
+    for(int i=0; i<2; ++i)
     {
-        std::cout<<schir[i]<<" ";
-    }*/
+        std::cout<<schir[i]/509<<" ";
+    }
     return 0;
 }

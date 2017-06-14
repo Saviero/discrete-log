@@ -30,8 +30,7 @@ inline ZZ norm(const ZZ& a, const ZZ& b, const Polynomial& poly)
     return answer;
 }
 
-bool AlgebraicFactorBase::factor(std::vector<long>& f, const ZZ& a, const ZZ& b)
-{
+bool AlgebraicFactorBase::factor(std::vector<long>& f, const ZZ& a, const ZZ& b)const {
     std::vector<long> zfactor;
     ZZ n = a+b*poly.m;
     ZZ nor = abs(norm(a, b, poly));
@@ -121,6 +120,6 @@ AlgebraicFactorBase::AlgebraicFactorBase(ZZ bound, const Polynomial& _f)
     }
 }
 
-long AlgebraicFactorBase::getTotalSize() {
+long AlgebraicFactorBase::getTotalSize()const {
     return num+fb.r.size();
 }

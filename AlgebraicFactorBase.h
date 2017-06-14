@@ -11,13 +11,13 @@
 class AlgebraicFactorBase {
 private:
     Polynomial poly;
-    FactorBase fb = FactorBase();
     std::vector<ZZ> a;
     long num;
 public:
+    FactorBase fb = FactorBase();
     AlgebraicFactorBase(ZZ bound, const Polynomial& f);
-    bool factor(std::vector<long>& f, const ZZ& a, const ZZ& b);
-    long getTotalSize();
+    bool factor(std::vector<long>& f, const ZZ& a, const ZZ& b)const;
+    long getTotalSize()const;
 };
 
 

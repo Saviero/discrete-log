@@ -1,66 +1,82 @@
 #include "NumberFieldSieve.h"
-#include "AlgebraicFactorBase.h"
-#define DEBUG
+//#define DEBUG
 
-long* schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, long d)
+vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // TODO: make this work!
 {
-    ZZ mod = l*l;
-    ZZ_pPush push;
-    ZZ_p::init(mod);
-    mat_ZZ_p matr;
-    matr.SetDims(d, d);
-    for(long i=0; i<d; ++i)
-    {
-        matr[i][i] = conv<ZZ_p>(l);
-    }
-    vec_ZZ_p v;
-    v.SetLength(d);
-    v[0] = conv<ZZ_p>(a);
-    v[1] = conv<ZZ_p>(b);
-    ZZ_p discr;
-    vec_ZZ_p x;
-    x.SetLength(d);
-    solve(discr, x, matr, v);
     long* answer = new long;
-    memset(answer, 0, sizeof(long)*d);
-    for(int i=0; i<d; ++i)
+    memset(answer, 0, sizeof(long)*conv<long>(f.d));
+
+    // Moving to the field mod l
+    ZZ_pPush push;
+    ZZ_p::init(l);
+    ZZ_pX poly = conv<ZZ_pX>(f.f);
+
+    // Determining epsilon
+    vec_pair_ZZ_pX_long factorf = SquareFreeDecomp(poly);
+    ZZ epsilon = l-1;
+    for(auto i=factorf.begin(); i<factorf.end(); ++i)
     {
-        answer[i] = conv<long>(rep(x[i]));
+        epsilon = epsilon*(l-i->b)/GCD(epsilon, (l-i->b));
     }
-    return answer;
+
+    // Determining matrix M
+    ZZ_p::init(l*l);
+    mat_ZZ_p m;
+    m.SetDims(conv<long>(f.d), conv<long>(f.d));
+    ZZX abpoly, mulpoly;
+    SetCoeff(abpoly, 0, a);
+    SetCoeff(abpoly, 1, b);
+    for(unsigned long i=0; i<f.d; ++i)
+    {
+        ZZX mult;
+        SetCoeff(mult, i, 1);
+        mulpoly = abpoly*mult % f.f;
+        for(unsigned long j = 0; j < f.d; ++j)
+        {
+            m[i][j] = conv<ZZ_p>(coeff(mulpoly, j));
+        }
+    }
+
+    // Calculating lambdas
+    m = power(m, epsilon);
+    vec_ZZ_p lambdas;
+    vec_ZZ_p eye;
+    eye.SetLength(conv<long>(f.d));
+    eye[0] = ZZ_p(1);
+    mul(lambdas, m, eye);
+    lambdas = lambdas - eye;
+    return conv<vec_ZZ>(lambdas);
 }
 
-mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s)
+mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s, const Polynomial& f, const AlgebraicFactorBase& base, const ZZ& v)
 {
-    ZZ p = ZZ_p::modulus();
-    RR logp = log(conv<RR>(p));
-    ZZ v = TruncToZZ(exp(pow(logp, RR(1./3))*pow(log(logp), RR(2./3))));
 #ifdef DEBUG
     std::cerr<<"Bound is: "<<v<<"\n";
 #endif
-    Polynomial f;
-#ifdef DEBUG
-    std::cerr<<"Generating factor bases\n";
-#endif
-    AlgebraicFactorBase base(v, f);
-#ifdef DEBUG
-    std::cerr<<"FB done\n";
-#endif
+    // Preparing output matrix
     mat_ZZ* res = new mat_ZZ();
     res->SetDims(base.getTotalSize()+conv<long>(f.d), base.getTotalSize()+conv<long>(f.d));
     long numOfRows = 1;
 
     for(ZZ b = ZZ(1); b < v; ++b)
     {
+        if(numOfRows >= base.getTotalSize()+conv<long>(f.d))
+        {
+            break;
+        }
         for(ZZ a = -v; a < v; ++a)
         {
-            if (GCD(a, b) == ZZ(1))
+            if(numOfRows >= base.getTotalSize()+conv<long>(f.d))
+            {
+                break;
+            }
+            if (GCD(a, b) == ZZ(1)) // we need only coprime a and b
             {
                 std::vector<long> expvec;
 #ifdef DEBUG
                 std::cerr<<"Trying to factor: ("<<a<<"; "<<b<<")\n";
 #endif
-                if(base.factor(expvec, a, b))
+                if(base.factor(expvec, a, b)) // factoring a+bm and a+b*alpha
                 {
 #ifdef DEBUG
                     std::cerr<<"Factored\n";
@@ -71,7 +87,7 @@ mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s)
                     s.push_back(ab);
                     for(long i=0; i<base.getTotalSize(); ++i)
                     {
-                        (*res)[numOfRows][i] = expvec[i]; // TODO: Add checking for numOfRows
+                        (*res)[numOfRows][i] = expvec[i];
                     }
                     ++numOfRows;
                 }
@@ -83,6 +99,7 @@ mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s)
                 }
             }
         }
+
     }
     return res;
 }
@@ -102,4 +119,75 @@ ZZ chineserem(std::vector<std::pair<ZZ, ZZ>> s)
         res += (m/s[i].second)*s[i].first*t;
     }
     return res % m;
+}
+
+ZZ log(ZZ t, ZZ g)
+{
+    Polynomial f;
+    mat_ZZ* sieveres;
+
+    ZZ p = ZZ_p::modulus();
+    RR logp = log(conv<RR>(p));
+    ZZ v = TruncToZZ(exp(pow(logp, RR(1./3))*pow(log(logp), RR(2./3))));
+
+    AlgebraicFactorBase base(v, f);
+
+    std::vector<std::pair<ZZ, ZZ>> pairs;
+    sieveres = sieve(pairs, f, base, v);
+    std::vector<long> factort;
+    if(base.fb.factor(factort, t))
+    {
+        for(unsigned long i=0; i < base.fb.r.size(); ++i)
+        {
+            (*sieveres)[0][i] = factort.at(i);
+        }
+        for(unsigned long i=base.fb.r.size(); i < base.getTotalSize()+f.d; ++i)
+        {
+            (*sieveres)[0][i] = 0;
+        }
+    }
+
+    ZZ q = p-1;
+    ZZ bound = TruncToZZ(sqrt(conv<RR>(q)));
+    std::vector<std::pair<ZZ, ZZ>> factor;
+    std::pair<ZZ, ZZ> primediv;
+    for(ZZ l = ZZ(2); l < bound; l = NextPrime(l+1))
+    {
+        primediv.first = l;
+        primediv.second = 0;
+        while(q % l == 0)
+        {
+            ++primediv.second;
+            q /= l;
+        }
+        if(primediv.second > 0)
+        {
+            factor.push_back(primediv);
+        }
+    }
+
+    std::vector<long> gfactor;
+    vec_ZZ gfactorZZ;
+    if(base.fb.factor(gfactor, g))
+    {
+        for(long i=0; i<gfactor.size(); ++i) {
+            gfactorZZ.append(conv<ZZ>(gfactor[i]));
+        }
+    }
+    for(long i=0; i<factor.size(); ++i)
+    {
+        q = factor[i].first;
+        for(long j=0; j<pairs.size(); ++j)
+        {
+            vec_ZZ schirmap = schirokauer_map(pairs[j].first, pairs[j].second, q, f);
+            for(long k=0; k < f.d; ++k)
+            {
+                (*sieveres)[j+1][k+base.getTotalSize()] = schirmap[k];
+            }
+        }
+        ZZ det;
+        vec_ZZ x;
+        solve(det, x, *sieveres, gfactorZZ);
+        // TODO: finish the method
+    }
 }
