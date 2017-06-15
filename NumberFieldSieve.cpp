@@ -1,23 +1,26 @@
 #include "NumberFieldSieve.h"
-//#define DEBUG
-
-vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // TODO: make this work!
+#define DEBUG_LOG
+//#define DEBUG_SCHIR
+vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f)
 {
     // Moving to the field mod l
     ZZ_pPush push;
     ZZ_p::init(l);
     ZZ_pX poly = conv<ZZ_pX>(f.f);
-#ifdef DEBUG
-    std::cerr<<"Polynomial is: "<<poly<<std::endl;
+#ifdef DEBUG_SCHIR
+    std::cerr<<"Polynomial is: "<<poly<<", L is "<<l<<std::endl;
 #endif
     // Determining epsilon
     vec_pair_ZZ_pX_long factorf = SquareFreeDecomp(poly);
+#ifdef DEBUG_SCHIR
+    std::cerr<<"Factorisation of F mod L is "<<factorf<<std::endl;
+#endif
     ZZ epsilon = l-1;
     for(auto i=factorf.begin(); i<factorf.end(); ++i)
     {
         epsilon = epsilon*(l-i->b)/GCD(epsilon, (l-i->b));
     }
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
     std::cerr<<"Epsilon is: "<<epsilon<<std::endl;
 #endif;
 
@@ -29,7 +32,7 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // T
     SetCoeff(abpoly, 0, a);
     SetCoeff(abpoly, 1, b);
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
     std::cerr<<"ABpoly is: "<<abpoly<<std::endl;
 #endif;
 
@@ -38,13 +41,13 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // T
         ZZX mult;
         SetCoeff(mult, i, 1);
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
         std::cerr<<"Mult is: "<<mult<<std::endl;
 #endif;
 
         mulpoly = abpoly*mult % f.f;
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
         std::cerr<<"Mulpoly is: "<<mulpoly<<std::endl;
 #endif;
         for(unsigned long j = 0; j < f.d; ++j)
@@ -53,14 +56,14 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // T
         }
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
     std::cerr<<"Matrix M is:\n"<<m<<std::endl;
 #endif
 
     // Calculating lambdas
     m = power(m, epsilon);
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
     std::cerr<<"Matrix M power epsilon is:\n"<<m<<std::endl;
 #endif
 
@@ -70,13 +73,13 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f) // T
     eye[0] = ZZ_p(1);
     mul(lambdas, m, eye);
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
     std::cerr<<"Lambdas is: "<<lambdas<<std::endl;
 #endif
 
     lambdas = lambdas - eye;
 
-#ifdef DEBUG
+#ifdef DEBUG_SCHIR
     std::cerr<<"Final lambdas is: "<<lambdas<<std::endl;
 #endif
     vec_ZZ res = conv<vec_ZZ>(lambdas);
@@ -126,7 +129,7 @@ mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s, const Polynomial& f, const Alge
                     s.push_back(ab);
                     for(long i=0; i<base.getTotalSize(); ++i)
                     {
-                        (*res)[numOfRows][i] = expvec[i];
+                        (*res)[i][numOfRows] = expvec[i];
                     }
                     ++numOfRows;
                 }
@@ -163,6 +166,9 @@ ZZ chineserem(std::vector<std::pair<ZZ, ZZ>> s)
 ZZ log(ZZ t, ZZ g)
 {
     Polynomial f;
+#ifdef DEBUG_LOG
+    std::cerr<<"Polynomial is "<<f.f<<"; M is "<<f.m<<std::endl;
+#endif
     mat_ZZ* sieveres;
 
     ZZ p = ZZ_p::modulus();
@@ -178,11 +184,11 @@ ZZ log(ZZ t, ZZ g)
     {
         for(unsigned long i=0; i < base.fb.r.size(); ++i)
         {
-            (*sieveres)[0][i] = factort.at(i);
+            (*sieveres)[i][0] = factort.at(i);
         }
         for(unsigned long i=base.fb.r.size(); i < base.getTotalSize()+f.d; ++i)
         {
-            (*sieveres)[0][i] = 0;
+            (*sieveres)[i][0] = 0;
         }
     }
 
@@ -190,7 +196,7 @@ ZZ log(ZZ t, ZZ g)
     ZZ bound = TruncToZZ(sqrt(conv<RR>(q)));
     std::vector<std::pair<ZZ, ZZ>> factor;
     std::pair<ZZ, ZZ> primediv;
-    for(ZZ l = ZZ(2); l < bound; l = NextPrime(l+1))
+    for(ZZ l = ZZ(2); l <= bound; l = NextPrime(l+1))
     {
         primediv.first = l;
         primediv.second = 0;
@@ -204,29 +210,69 @@ ZZ log(ZZ t, ZZ g)
             factor.push_back(primediv);
         }
     }
+    if(q > ZZ(1))
+    {
+        primediv.first = q;
+        primediv.second = 1;
+        factor.push_back(primediv);
+    }
 
     std::vector<long> gfactor;
     vec_ZZ gfactorZZ;
+    gfactorZZ.SetLength(base.getTotalSize()+conv<long>(f.d));
+#ifdef DEBUG_LOG
+    std::cerr<<"G is: "<<g<<std::endl;
+#endif
     if(base.fb.factor(gfactor, g))
     {
         for(long i=0; i<gfactor.size(); ++i) {
-            gfactorZZ.append(conv<ZZ>(gfactor[i]));
+            gfactorZZ[i] = conv<ZZ>(gfactor[i]);
         }
     }
+#ifdef DEBUG_LOG
+    std::cerr<<"gfactor's results are: ";
+    for(int i=0; i<gfactor.size(); ++i)
+    {
+        std::cerr<<gfactor[i]<<" ";
+    }
+    std::cerr<<"\ngfactorZZ: "<<gfactorZZ<<std::endl;
+#endif
+    std::vector<std::pair<ZZ, ZZ>> chineseinput;
+
     for(long i=0; i<factor.size(); ++i)
     {
         q = factor[i].first;
+        if(q == ZZ(2))
+        {
+            continue;
+        }
+        //ZZ_pPush push;
+        ZZ_p::init(q);
+        mat_ZZ_p matrixl;
+        matrixl = conv<mat_ZZ_p>((*sieveres));
         for(long j=0; j<pairs.size(); ++j)
         {
             vec_ZZ schirmap = schirokauer_map(pairs[j].first, pairs[j].second, q, f);
             for(long k=0; k < f.d; ++k)
             {
-                (*sieveres)[j+1][k+base.getTotalSize()] = schirmap[k];
+                matrixl[k+base.getTotalSize()][j+1] = conv<ZZ_p>(schirmap[k]);
             }
         }
-        ZZ det;
-        vec_ZZ x;
-        solve(det, x, *sieveres, gfactorZZ);
-        // TODO: finish the method
+        ZZ_p det;
+        vec_ZZ_p x;
+        vec_ZZ_p gfactorZZP = -conv<vec_ZZ_p>(gfactorZZ);
+#ifdef DEBUG_LOG
+        std::cerr<<"Matrix is:\n"<<matrixl<<"\ngfactorZZP is: "<<gfactorZZP<<std::endl;
+#endif
+        solve(det, x, matrixl, gfactorZZP);
+        std::pair<ZZ, ZZ> sol;
+#ifdef DEBUG_LOG
+        std::cerr<<"Determinant is "<<det<<std::endl;
+        std::cerr<<"Solution is "<<x<<std::endl;
+#endif
+        sol.first = conv<ZZ>(x[0]);
+        sol.second = q;
     }
+
+    return chineserem(chineseinput);
 }

@@ -2,7 +2,7 @@
 
 #include "FactorBase.h"
 
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
 #include<iostream>
 #endif
@@ -29,6 +29,9 @@ inline ZZ rema(ZZ& q, ZZ a, ZZ b)
 
 bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)const
 {
+#ifdef DEBUG
+    std::cerr<<"Value of factored num is: "<<_n<<std::endl;
+#endif
     f.resize(r.size());
     for(int i = 0; i < r.size(); ++i)
     {
@@ -108,18 +111,24 @@ void FactorBase::setBound(ZZ bound) {
     ZZ q = ZZ(2);
     ZZ elem;
     smallInd = 0;
+#ifdef DEBUG
+    std::cerr<<"Rational factor base elements are:\n";
+#endif
     while(q<bound)
     {
+#ifdef DEBUG
+        std::cerr<<q<<" ";
+#endif
         elem = q;
         r.push_back(elem);
         count++;
         q = NextPrime(q+1);
-#ifdef DEBUG
-            std::cerr<<q<<"\n";
-#endif
     }
     while(r[smallInd] < TruncToZZ(sqrt(conv<RR>(r[r.size()-1]))))
     {
         ++smallInd;
     }
+#ifdef DEBUG
+    std::cerr<<"\n";
+#endif
 }

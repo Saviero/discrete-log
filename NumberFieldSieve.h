@@ -18,6 +18,7 @@ using namespace NTL;
 vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f);
 ZZ chineserem(std::vector<std::pair<ZZ, ZZ>> s);
 mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s);
+ZZ log(ZZ t, ZZ g);
 
 
 #endif //DISCRETE_LOG_NUMBERFIELDSIEVE_H

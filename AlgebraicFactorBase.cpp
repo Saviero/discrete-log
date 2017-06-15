@@ -3,7 +3,8 @@
 //
 
 #include "AlgebraicFactorBase.h"
-//#define EVALP_DEBUG
+#define FACTOR_DEBUG
+#define GEN_DEBUG
 
 inline ZZ norm(const ZZ& a, const ZZ& b, const Polynomial& poly)
 {
@@ -34,6 +35,9 @@ bool AlgebraicFactorBase::factor(std::vector<long>& f, const ZZ& a, const ZZ& b)
     std::vector<long> zfactor;
     ZZ n = a+b*poly.m;
     ZZ nor = abs(norm(a, b, poly));
+#ifdef FACTOR_DEBUG
+    std::cerr<<"Factoring ("<<a<<", "<<b<<")\n";
+#endif
     if(fb.factor(zfactor, n))
     {
         f.resize(fb.r.size()+num);
