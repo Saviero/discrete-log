@@ -1,5 +1,6 @@
-#include "NumberFieldSieve.h"
+#include "NumberFieldSieve.h"git
 #define DEBUG_LOG
+//#define DEBUG
 //#define DEBUG_SCHIR
 vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f)
 {
@@ -99,15 +100,19 @@ mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s, const Polynomial& f, const Alge
     mat_ZZ* res = new mat_ZZ();
     res->SetDims(base.getTotalSize()+conv<long>(f.d), base.getTotalSize()+conv<long>(f.d));
     long numOfRows = 1;
-
-    for(ZZ b = ZZ(1); b < v; ++b)
+    ZZ newv = ZZ(38); // TODO: change after testing
+    for(ZZ a = ZZ(1); a < newv; ++a)
     {
         if(numOfRows >= base.getTotalSize()+conv<long>(f.d))
         {
             break;
         }
-        for(ZZ a = -v; a < v; ++a)
+        for(ZZ b = -newv; b < newv; ++b)
         {
+            if(b == 0)
+            {
+                continue;
+            }
             if(numOfRows >= base.getTotalSize()+conv<long>(f.d))
             {
                 break;
@@ -175,10 +180,10 @@ ZZ log(ZZ t, ZZ g)
     RR logp = log(conv<RR>(p));
     ZZ v = TruncToZZ(exp(pow(logp, RR(1./3))*pow(log(logp), RR(2./3))));
 
-    AlgebraicFactorBase base(v, f);
+    AlgebraicFactorBase base(ZZ(15), f);
 
     std::vector<std::pair<ZZ, ZZ>> pairs;
-    sieveres = sieve(pairs, f, base, v);
+    sieveres = sieve(pairs, f, base, ZZ(15)); // TODO: change after testing
     std::vector<long> factort;
     if(base.fb.factor(factort, t))
     {
@@ -264,9 +269,11 @@ ZZ log(ZZ t, ZZ g)
 #ifdef DEBUG_LOG
         std::cerr<<"Matrix is:\n"<<matrixl<<"\ngfactorZZP is: "<<gfactorZZP<<std::endl;
 #endif
-        solve(det, x, matrixl, gfactorZZP);
+        //long rank = gauss(matrixl);
+        //solve(det, x, matrixl, gfactorZZP);
         std::pair<ZZ, ZZ> sol;
 #ifdef DEBUG_LOG
+        //std::cerr<<"Echeloned matrix is: \n"<<matrixl<<std::endl;
         std::cerr<<"Determinant is "<<det<<std::endl;
         std::cerr<<"Solution is "<<x<<std::endl;
 #endif

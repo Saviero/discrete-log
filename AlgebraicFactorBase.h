@@ -11,7 +11,7 @@
 class AlgebraicFactorBase {
 private:
     Polynomial poly;
-    std::vector<ZZ> a;
+    std::vector<std::vector<ZZ>> a;
     long num;
 public:
     FactorBase fb = FactorBase();

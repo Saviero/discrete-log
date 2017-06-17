@@ -2,7 +2,7 @@
 
 #include "FactorBase.h"
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #include<iostream>
 #endif
@@ -32,14 +32,27 @@ bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)const
 #ifdef DEBUG
     std::cerr<<"Value of factored num is: "<<_n<<std::endl;
 #endif
+    if(_n == 0)
+    {
+        return false;
+    }
     f.resize(r.size());
     for(int i = 0; i < r.size(); ++i)
     {
         f[i] = 0;
     }
     ZZ n(_n);
+    if(n < 0)
+    {
+        f[0] = 1;
+        n = -n;
+    }
+    else
+    {
+        f[0] = 0;
+    }
     ZZ q;
-    for(long i=0; i<smallInd; ++i)
+    for(long i=1; i<smallInd; ++i)
     {
         if(n % r[i] == 0)
         {
@@ -108,7 +121,7 @@ FactorBase::FactorBase() {
 }
 
 void FactorBase::setBound(ZZ bound) {
-    ZZ q = ZZ(2);
+    ZZ q = ZZ(-1);
     ZZ elem;
     smallInd = 0;
 #ifdef DEBUG
