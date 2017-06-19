@@ -19,6 +19,8 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f);
 ZZ chineserem(std::vector<std::pair<ZZ, ZZ>> s);
 mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s);
 ZZ log(ZZ t, ZZ g);
+vec_ZZ_p lanczos(mat_ZZ_p A, vec_ZZ_p b);
+
 
 
 #endif //DISCRETE_LOG_NUMBERFIELDSIEVE_H
