@@ -7,10 +7,10 @@ using namespace NTL;
 
 int main()
 {
-    ZZ p = NextPrime(ZZ(11026));
+    ZZ p = NextPrime(conv<ZZ>("1001003"));
     std::cout<<p<<std::endl;
     ZZ_p::init(p);
 
-    std::cout<<log(ZZ(2), ZZ(4096));
+    std::cout<<log(ZZ(74375), ZZ(556480));
     return 0;
 }

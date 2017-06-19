@@ -54,13 +54,11 @@ bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)const
     ZZ q;
     for(long i=1; i<smallInd; ++i)
     {
-        if(n % r[i] == 0)
-        {
-            n = n / r[i];
-            ++f[i];
-        }
         while(n % r[i]  == 0)
         {
+#ifdef DEBUG
+            std::cerr<<"N="<<n<<" is divisible by r="<<r[i]<<std::endl;
+#endif
             n = n / r[i];
             ++f[i];
         }

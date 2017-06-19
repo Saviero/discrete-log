@@ -1,8 +1,46 @@
 #include "NumberFieldSieve.h"
-//#define DEBUG_LOG
+#define DEBUG_LOG
 //#define DEBUG_LANCZOS
 //#define DEBUG
 //#define DEBUG_SCHIR
+
+vec_ZZ_p gausselim(mat_ZZ_p& a)
+{
+    vec_ZZ_p ans;
+    ans.SetLength(a.NumRows());
+    long m = a.NumCols()-1;
+    long n = a.NumRows();
+    std::vector<long> where(m, -1);
+    for (long col = 0, row = 0; col < m && row < n; ++col) {
+        long sel = row;
+        for (long i = row; i < n; ++i) {
+            if (rep(a[i][col]) > rep(a[sel][col])) {
+                swap (a[i], a[row]);
+                break;
+            }
+        }
+
+        if (IsZero(a[row][col])) {
+            continue;
+        }
+        where[col] = row;
+
+        for (long i = 0; i < n; ++i) {
+            if (i != row) {
+                ZZ_p c = a[i][col] / a[row][col];
+                for (long j=col; j<=m; ++j)
+                    a[i][j] -= a[row][j] * c;
+            }
+        }
+        ++row;
+    }
+    for (int i=0; i<m; ++i) {
+        if (where[i] != -1) {
+            ans[i] = a[where[i]][m] / a[where[i]][i];
+        }
+    }
+    return ans;
+}
 
 ZZ_p scalmul(vec_ZZ_p x, vec_ZZ_p y)
 {
@@ -309,6 +347,9 @@ ZZ log(ZZ t, ZZ g)
     ZZ p = ZZ_p::modulus();
     RR logp = log(conv<RR>(p));
     ZZ v = TruncToZZ(exp(pow(logp, RR(1./3))*pow(log(logp), RR(2./3))));
+#ifdef DEBUG_LOG
+    std::cerr<<"Bound for factor bases: "<<v<<std::endl;
+#endif
 
     AlgebraicFactorBase base(v, f);
 
@@ -383,7 +424,7 @@ ZZ log(ZZ t, ZZ g)
     std::cerr<<"\ngfactorZZ: "<<gfactorZZ<<std::endl;
 #endif
     std::vector<std::pair<ZZ, ZZ>> chineseinput;
-
+    std::pair<ZZ, ZZ> sol;
     for(long i=0; i<factor.size(); ++i)
     {
         q = factor[i].first;
@@ -422,46 +463,15 @@ ZZ log(ZZ t, ZZ g)
         {
             matrixlb[j][matrixlb.NumCols()-1] = gfactorZZP[j];
         }
-        long rank = gauss(matrixlb);
+
+        x = gausselim(matrixlb);
 #ifdef DEBUG_LOG
-        std::cerr<<"Echeloned matrix with B is: \n"<<matrixlb<<"Rank is: "<<rank<<std::endl;
-#endif
-        matrixl.SetDims(rank, rank);
-        gfactorZZP.SetLength(rank);
-        for(unsigned long j=0; j<rank; ++j)
-        {
-            for(unsigned long k=0; k<rank; ++k)
-            {
-                matrixl[j][k] = matrixlb[j][k];
-            }
-        }
-        for(unsigned long j=0; j<rank; ++j)
-        {
-            gfactorZZP[j] = matrixlb[j][matrixlb.NumCols()-1];
-        }
-        for(unsigned long j=rank; j<matrixlb.NumRows(); ++j)
-        {
-            if(matrixlb[j][matrixlb.NumCols()-1] != 0)
-            {
-                std::cerr<<"Error! No solution to matrix"<<std::endl;
-                return ZZ(-1);
-            }
-        }
-#ifdef DEBUG_LOG
-        std::cerr<<"Matrix is:\n"<<matrixl<<"gfactorZZP is: "<<gfactorZZP<<std::endl;
-#endif
-        matrixl = transpose(matrixl);
-        solve(det, x, matrixl, gfactorZZP);
-        std::pair<ZZ, ZZ> sol;
-#ifdef DEBUG_LOG
-        std::cerr<<"Determinant is "<<det<<std::endl;
         std::cerr<<"Solution is "<<x<<std::endl;
 #endif
         sol.first = conv<ZZ>(x[0]);
         sol.second = q;
         chineseinput.push_back(sol);
     }
-    std::pair<ZZ, ZZ> sol;
     sol.first = 0;
     sol.second = 2;
     chineseinput.push_back(sol);
@@ -480,7 +490,7 @@ ZZ log(ZZ t, ZZ g)
         sol.first = 1;
         sol.second = 2;
         chineseinput.push_back(sol);
-        ans = -(-chineserem(chineseinput)) % (ZZ_p::modulus()-1);
+        ans = (-chineserem(chineseinput)) % (ZZ_p::modulus()-1);
 #ifdef DEBUG_LOG
         std::cerr<<"Chineserem answer for 1 mod 2 is: "<<ans<<std::endl;
 #endif
