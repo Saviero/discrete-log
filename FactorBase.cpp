@@ -2,33 +2,20 @@
 
 #include "FactorBase.h"
 
-//#define DEBUG
 #ifdef DEBUG
 #include<iostream>
 #endif
-// TODO: test new class
 
 FactorBase::FactorBase(ZZ bound)
 {
     setBound(bound);
 }
 
-inline ZZ rema(ZZ& q, ZZ a, ZZ b)
-{
-#ifdef DEBUG
-    std::cerr<<"remainder params: "<<q<<" "<<a<<" "<<b<<"\n";
-#endif
-    q = a/b;
-    ZZ r = a%b;
-    while(r < 0)
-    {
-        r += b;
-    }
-    return r;
-}
-
 bool FactorBase::factor(std::vector<long>& f, const ZZ& _n)const
 {
+    /*
+     * Factorization of a number over a rational factor base.
+     */
 #ifdef DEBUG
     std::cerr<<"Value of factored num is: "<<_n<<std::endl;
 #endif
@@ -119,6 +106,9 @@ FactorBase::FactorBase() {
 }
 
 void FactorBase::setBound(ZZ bound) {
+    /*
+     * Generating a rational factor base with upper bound of bound.
+     */
     ZZ q = ZZ(-1);
     ZZ elem;
     smallInd = 0;
@@ -142,4 +132,9 @@ void FactorBase::setBound(ZZ bound) {
 #ifdef DEBUG
     std::cerr<<"\n";
 #endif
+}
+
+unsigned long FactorBase::getSize() const
+{
+    return r.size();
 }

@@ -6,18 +6,19 @@
 #define DISCRETE_LOG_ALGEBRAICFACTORBASE_H
 #include"FactorBase.h"
 #include "Polynomial.h"
-
+//#define FACTOR_DEBUG
+//#define GEN_DEBUG
 
 class AlgebraicFactorBase {
 private:
     Polynomial poly;
     std::vector<std::vector<ZZ>> a;
-    long num;
+    unsigned long num;
 public:
-    FactorBase fb = FactorBase();
-    AlgebraicFactorBase(ZZ bound, const Polynomial& f);
+    AlgebraicFactorBase(const Polynomial& f);
+    void generate(const FactorBase fb);
     bool factor(std::vector<long>& f, const ZZ& a, const ZZ& b)const;
-    long getTotalSize()const;
+    unsigned long getSize()const;
 };
 
 

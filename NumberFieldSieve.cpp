@@ -1,10 +1,6 @@
 #include "NumberFieldSieve.h"
-#define DEBUG_LOG
-//#define DEBUG_LANCZOS
-//#define DEBUG
-//#define DEBUG_SCHIR
 
-vec_ZZ_p gausselim(mat_ZZ_p& a)
+vec_ZZ_p Logarithm::gausselim(mat_ZZ_p& a)
 {
     vec_ZZ_p ans;
     ans.SetLength(a.NumRows());
@@ -42,136 +38,7 @@ vec_ZZ_p gausselim(mat_ZZ_p& a)
     return ans;
 }
 
-ZZ_p scalmul(vec_ZZ_p x, vec_ZZ_p y)
-{
-    if(x.length() != y.length())
-    {
-        std::cerr<<"Length of vectors are not the same!\n";
-        return ZZ_p(0);
-    }
-    ZZ_p result = ZZ_p(0);
-    for(unsigned long i = 0; i<x.length(); ++i)
-    {
-        result += x[i]*y[i];
-    }
-#ifdef DEBUG_LANCZOS
-    std::cerr<<"Scalar mul for x="<<x<<", y="<<y<<"is "<<result<<std::endl;
-#endif
-    return result;
-}
-
-ZZ_p scalmul_mod(vec_ZZ_p x, vec_ZZ_p y, mat_ZZ_p a)
-{
-    if(x.length() != a.NumCols())
-    {
-        std::cerr<<"Invalid matrix's dims!\n";
-        return ZZ_p(0);
-    }
-    vec_ZZ_p xnew;
-    mul(xnew, a, x);
-    std::cerr<<"Scalar mul_mod for x="<<x<<", y="<<y<<"; new x is "<<xnew<<std::endl;
-    return scalmul(xnew, y);
-}
-
-vec_ZZ_p lanczos(mat_ZZ_p A, vec_ZZ_p b)
-{
-    if(IsZero(b))
-    {
-#ifdef DEBUG_LANCZOS
-        std::cerr<<"B is zero vector; getting the last column of A as a new B"<<std::endl;
-#endif
-        b = -A[A.NumCols()-1];
-#ifdef DEBUG_LANCZOS
-        std::cerr<<"B now is"<<b<<std::endl;
-#endif
-        mat_ZZ_p Atemp = A;
-        A.SetDims(A.NumRows(), A.NumCols()-1);
-        for(unsigned long i=0; i<A.NumRows(); ++i)
-        {
-            for(unsigned long j=0; j<A.NumCols(); ++j)
-            {
-                A[i][j] = Atemp[i][j];
-            }
-        }
-#ifdef DEBUG_LANCZOS
-        std::cerr<<"A now is"<<A<<std::endl;
-#endif
-    }
-    vec_ZZ_p answer;
-    mat_ZZ_p D;
-    D.SetDims(A.NumRows(), A.NumRows());
-    for(unsigned long i=0; i<D.NumCols(); ++i)
-    {
-        ZZ_p rand = random_ZZ_p();
-        while(rand == 0) {rand = random_ZZ_p();}
-        D[i][i] = rand;
-    }
-#ifdef DEBUG_LANCZOS
-    std::cerr<<"Matrix D is\n"<<D<<std::endl;
-#endif
-    mat_ZZ_p Atemp, Anew;
-    mul(Atemp, transpose(A), power(D, 2));
-    vec_ZZ_p bnew;
-    mul(bnew, b, Atemp);
-    mul(Anew, Atemp, A);
-#ifdef DEBUG_LANCZOS
-    std::cerr<<"New A is\n"<<Anew<<"\nNew B is "<<bnew<<std::endl;
-#endif
-    std::vector<vec_ZZ_p> omega;
-    vec_ZZ_p curromega = bnew;
-    omega.push_back(curromega);
-#ifdef DEBUG_LANCZOS
-    std::cerr<<"Omega[0] is "<<curromega<<std::endl;
-#endif
-    mul(curromega, Anew, omega[0]);
-    ZZ_p coeff1 = scalmul_mod(omega[0], curromega, Anew)/scalmul_mod(omega[0], omega[0], Anew);
-    ZZ_p coeff2;
-    vec_ZZ_p aomeg1;
-    vec_ZZ_p aomeg2;
-    curromega -= coeff1*omega[0];
-    omega.push_back(curromega);
-#ifdef DEBUG_LANCZOS
-    std::cerr<<"Omega[1] is "<<curromega<<std::endl;
-#endif
-    unsigned long i = 2;
-    while(!IsZero(curromega))
-    {
-        if(scalmul_mod(curromega, curromega, Anew) == 0)
-        {
-            std::cerr<<"Cannot solve system!"<<std::endl;
-            return answer;
-        }
-        mul(curromega, Anew, omega[i-1]);
-        mul(aomeg1, Anew, omega[i-1]);
-        mul(aomeg2, Anew, omega[i-2]);
-        coeff1 = -(scalmul_mod(omega[i-1], aomeg1, Anew)/scalmul_mod(omega[i-1], omega[i-1], Anew));
-        coeff2 = -(scalmul_mod(omega[i-1], aomeg2, Anew)/scalmul_mod(omega[i-2], aomeg2, Anew));
-        curromega += coeff1*omega[i-1];
-        curromega += coeff2*omega[i-2];
-        omega.push_back(curromega);
-#ifdef DEBUG_LANCZOS
-        std::cerr<<"Omega["<<i<<"] is "<<curromega<<std::endl;
-#endif
-        ++i;
-    }
-    vec_ZZ_p result;
-    result.SetLength(A.NumRows());
-    for(unsigned long j=0; j < omega.size()-1; ++j)
-    {
-        result += (scalmul(omega[j], bnew)/scalmul(omega[j], omega[j]))*omega[j];
-    }
-    vec_ZZ_p check = A*result;
-    if(check != b)
-    {
-#ifdef DEBUG_LANCZOS
-        std::cerr<<"Wrong result! Result is: "<<result<<std::endl;
-        return lanczos(A, b);
-#endif
-    }
-    return result;
-}
-
-vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f)
+vec_ZZ Logarithm::schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f)
 {
     // Moving to the field mod l
     ZZ_pPush push;
@@ -260,52 +127,96 @@ vec_ZZ schirokauer_map(const ZZ& a, const ZZ& b, const ZZ& l, Polynomial f)
     return res;
 }
 
-mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s, const Polynomial& f, const AlgebraicFactorBase& base, const ZZ& v)
+mat_ZZ* Logarithm::sieve(std::vector<std::pair<ZZ, ZZ>>& s,
+                         const Polynomial& f,
+                         const FactorBase rfb,
+                         const AlgebraicFactorBase& alfb,
+                         const ZZ& v)
 {
 #ifdef DEBUG
     std::cerr<<"Bound is: "<<v<<"\n";
 #endif
     // Preparing output matrix
     mat_ZZ* res = new mat_ZZ();
-    res->SetDims(base.getTotalSize()+conv<long>(f.d), base.getTotalSize()+conv<long>(f.d));
+    res->SetDims(rfb.getSize() + alfb.getSize()+conv<long>(f.d), rfb.getSize() + alfb.getSize()+conv<long>(f.d));
     long numOfRows = 1;
     ZZ newv = v;
     ZZ oldv = ZZ(1);
-    while(numOfRows < base.getTotalSize()+conv<long>(f.d)) {
+    while(numOfRows < dim) {
         for (ZZ a = oldv; a < newv; ++a) {
-            if (numOfRows >= base.getTotalSize() + conv<long>(f.d)) {
+            if (numOfRows >= dim) {
                 break;
             }
             for (ZZ b = -newv; b < newv; ++b) {
                 if (b == 0) {
                     continue;
                 }
-                if (numOfRows >= base.getTotalSize() + conv<long>(f.d)) {
+                if (numOfRows >= dim) {
                     break;
                 }
                 if (GCD(a, b) == ZZ(1)) // we need only coprime a and b
                 {
                     std::vector<long> expvec;
+                    std::vector<long> rexpvec;
+                    std::vector<long> alexpvec;
+
 #ifdef DEBUG
                     std::cerr<<"Trying to factor: ("<<a<<"; "<<b<<")\n";
 #endif
-                    if (base.factor(expvec, a, b)) // factoring a+bm and a+b*alpha
+                    if (rfb.factor(rexpvec, a+b*f.m)) // factoring a+bm
                     {
 #ifdef DEBUG
-                        std::cerr<<"Factored\n";
-#endif
-                        std::pair<ZZ, ZZ> ab;
-                        ab.first = a;
-                        ab.second = b;
-                        s.push_back(ab);
-                        for (long i = 0; i < base.getTotalSize(); ++i) {
-                            (*res)[i][numOfRows] = expvec[i];
+                        std::cerr<<"Rexpvec for a="<<a<<", b="<<b<<" is: ";
+                        for(unsigned long i=0; i<rexpvec.size(); ++i)
+                        {
+                            std::cerr<<rexpvec[i]<<" ";
                         }
-                        ++numOfRows;
-                    } else {
-#ifdef DEBUG
-                        std::cerr<<"Not smooth\n";
+                        std::cerr<<"\n";
 #endif
+                        for(unsigned long i=0; i<rexpvec.size(); ++i)
+                        {
+                            expvec.push_back(rexpvec[i]);
+                        }
+                        if (alfb.factor(alexpvec, a, b)) // factoring <a+b*alpha>
+                        {
+#ifdef DEBUG
+                            std::cerr<<"Alexpvec for a="<<a<<", b="<<b<<" is: ";
+                            for(unsigned long i=0; i<alexpvec.size(); ++i)
+                            {
+                                std::cerr<<alexpvec[i]<<" ";
+                            }
+                            std::cerr<<"\n";
+#endif
+#ifdef DEBUG
+                            std::cerr<<"Factored\n";
+#endif
+                            for(unsigned long i=0; i<alexpvec.size(); ++i)
+                            {
+                                expvec.push_back(alexpvec[i]);
+                            }
+#ifdef DEBUG
+                            std::cerr<<"Expvec for a="<<a<<", b="<<b<<" is: ";
+                            for(unsigned long i=0; i<expvec.size(); ++i)
+                            {
+                                std::cerr<<expvec[i]<<" ";
+                            }
+                            std::cerr<<"\n";
+#endif
+                            std::pair<ZZ, ZZ> ab;
+                            ab.first = a;
+                            ab.second = b;
+                            s.push_back(ab);
+                            for (long i = 0; i < dim - conv<long>(f.d); ++i) {
+                                (*res)[i][numOfRows] = expvec[i];
+                            }
+                            ++numOfRows;
+                        }
+                        else
+                        {
+#ifdef DEBUG
+                            std::cerr<<"Not smooth\n";
+#endif
+                        }
                     }
                 }
             }
@@ -319,7 +230,7 @@ mat_ZZ* sieve(std::vector<std::pair<ZZ, ZZ>>& s, const Polynomial& f, const Alge
     return res;
 }
 
-ZZ chineserem(std::vector<std::pair<ZZ, ZZ>> s)
+ZZ Logarithm::chineserem(std::vector<std::pair<ZZ, ZZ>> s)
 {
     ZZ m = ZZ(1);
     for(int i=0; i<s.size(); ++i)
@@ -336,33 +247,24 @@ ZZ chineserem(std::vector<std::pair<ZZ, ZZ>> s)
     return res % m;
 }
 
-ZZ log(ZZ t, ZZ g)
+
+ZZ Logarithm::log(ZZ t, ZZ g)
 {
-    Polynomial f;
-#ifdef DEBUG_LOG
-    std::cerr<<"Polynomial is "<<f.f<<"; M is "<<f.m<<std::endl;
-#endif
-    mat_ZZ* sieveres;
-
-    ZZ p = ZZ_p::modulus();
-    RR logp = log(conv<RR>(p));
-    ZZ v = TruncToZZ(exp(pow(logp, RR(1./3))*pow(log(logp), RR(2./3))));
-#ifdef DEBUG_LOG
-    std::cerr<<"Bound for factor bases: "<<v<<std::endl;
-#endif
-
-    AlgebraicFactorBase base(v, f);
-
-    std::vector<std::pair<ZZ, ZZ>> pairs;
-    sieveres = sieve(pairs, f, base, v);
     std::vector<long> factort;
-    if(base.fb.factor(factort, t))
+    if(rfb.factor(factort, t))
     {
-        for(unsigned long i=0; i < base.fb.r.size(); ++i)
+#ifdef DEBUG_LOG
+    std::cerr<<"tfactor's results are: ";
+    for(int i=0; i<factort.size(); ++i)
+    {
+        std::cerr<<factort[i]<<" ";
+    }
+#endif
+        for(unsigned long i=0; i < rfb.getSize(); ++i)
         {
             (*sieveres)[i][0] = factort.at(i);
         }
-        for(unsigned long i=base.fb.r.size(); i < base.getTotalSize()+f.d; ++i)
+        for(unsigned long i=rfb.getSize(); i < rfb.getSize()  +alfb.getSize() + f.d; ++i)
         {
             (*sieveres)[i][0] = 0;
         }
@@ -373,7 +275,7 @@ ZZ log(ZZ t, ZZ g)
         return ZZ(-1);
     }
 
-    ZZ q = p-1;
+    ZZ q = ZZ_p::modulus()-1;
     ZZ bound = TruncToZZ(sqrt(conv<RR>(q)));
     std::vector<std::pair<ZZ, ZZ>> factor;
     std::pair<ZZ, ZZ> primediv;
@@ -400,11 +302,11 @@ ZZ log(ZZ t, ZZ g)
 
     std::vector<long> gfactor;
     vec_ZZ gfactorZZ;
-    gfactorZZ.SetLength(base.getTotalSize()+conv<long>(f.d));
+    gfactorZZ.SetLength(dim);
 #ifdef DEBUG_LOG
     std::cerr<<"G is: "<<g<<std::endl;
 #endif
-    if(base.fb.factor(gfactor, g))
+    if(rfb.factor(gfactor, g))
     {
         for(long i=0; i<gfactor.size(); ++i) {
             gfactorZZ[i] = conv<ZZ>(gfactor[i]);
@@ -441,7 +343,7 @@ ZZ log(ZZ t, ZZ g)
             vec_ZZ schirmap = schirokauer_map(pairs[j].first, pairs[j].second, q, f);
             for(long k=0; k < f.d; ++k)
             {
-                matrixl[k+base.getTotalSize()][j+1] = conv<ZZ_p>(schirmap[k]);
+                matrixl[k+dim - conv<long>(f.d)][j+1] = conv<ZZ_p>(schirmap[k]);
             }
         }
         ZZ_p det;

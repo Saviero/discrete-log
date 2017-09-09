@@ -1,9 +1,10 @@
 #include "AlgebraicFactorBase.h"
-//#define FACTOR_DEBUG
-//#define GEN_DEBUG
 
 inline ZZ norm(const ZZ& a, const ZZ& b, const Polynomial& poly)
 {
+    /*
+     * Calculating norm N(a) for ideals <a+b*alpha>.
+     */
     std::vector<ZZ> powersb;
     powersb.resize(deg(poly.f)+1);
     ZZ powerb = ZZ(1);
@@ -28,42 +29,36 @@ inline ZZ norm(const ZZ& a, const ZZ& b, const Polynomial& poly)
 }
 
 bool AlgebraicFactorBase::factor(std::vector<long>& f, const ZZ& a, const ZZ& b)const {
-    std::vector<long> zfactor;
-    ZZ n = a+b*poly.m;
+    /*
+     * Factorization of an ideal <a+b*alpha> over algebraic factor base.
+     */
     ZZ nor = abs(norm(a, b, poly));
 #ifdef FACTOR_DEBUG
     std::cerr<<"Factoring ("<<a<<", "<<b<<")\n";
 #endif
-    if(fb.factor(zfactor, n))
+    f.resize(num);
+    long j = 0;
+    for(long i=0; i<this->a.size(); ++i)
     {
-        f.resize(fb.r.size()+num);
-        for(long i = 0; i<fb.r.size(); ++i)
+        for(unsigned long k=1; k<this->a[i].size(); ++k)
         {
-            f[i] = zfactor[i];
-        }
-        long j = 0;
-        for(long i=0; i<this->a.size(); ++i)
-        {
-            for(unsigned long k=0; k<this->a[i].size(); ++k)
+            f[j] = 0;
+#ifdef FACTOR_DEBUG
+            std::cerr<<"For ideal q="<<this->a[i][0]<<" r="<<this->a[i][k]<<": a mod q = "<<(a % this->a[i][0])<<"; -b*r mod q = "<<((-b*this->a[i][k]) % this->a[i][0])<<std::endl;
+#endif
+            if((a % this->a[i][0]) == ((-b*this->a[i][k]) % this->a[i][0])) {
+                while (nor % this->a[i][0] == 0) {
+                    nor = nor / this->a[i][0];
+                    ++f[j];
+                }
+            }
+            ++j;
+            if(nor == 1)
             {
-                f[fb.r.size()+j] = 0;
 #ifdef FACTOR_DEBUG
-                std::cerr<<"For ideal q="<<fb.r[i]<<" r="<<this->a[i][k]<<": a mod q = "<<(a % fb.r[i])<<"; -b*r mod q = "<<((-b*this->a[i][k]) % fb.r[i])<<std::endl;
+                std::cerr<<"Pair ("<<a<<", "<<b<<") factors completely\n";
 #endif
-                if((a % fb.r[i]) == ((-b*this->a[i][k]) % fb.r[i])) {
-                    while (nor % fb.r[i] == 0) {
-                        nor = nor / fb.r[i];
-                        ++f[fb.r.size() + j];
-                    }
-                }
-                ++j;
-                if(nor == 1)
-                {
-#ifdef FACTOR_DEBUG
-                    std::cerr<<"Pair ("<<a<<", "<<b<<") factors completely\n";
-#endif
-                    return true;
-                }
+                return true;
             }
         }
     }
@@ -88,10 +83,19 @@ inline ZZ_p evalp(const Polynomial& poly, const ZZ& x)
     return answer;
 }
 
-AlgebraicFactorBase::AlgebraicFactorBase(ZZ bound, const Polynomial& _f)
+AlgebraicFactorBase::AlgebraicFactorBase(const Polynomial &f)
 {
-    poly = _f;
-    fb.setBound(bound);
+    poly = f;
+    a.resize(0);
+    num = 0;
+}
+
+unsigned long AlgebraicFactorBase::getSize()const {
+    return num;
+}
+
+void AlgebraicFactorBase::generate(const FactorBase fb)
+{
     a.resize(fb.r.size());
     num = 0;
     for(long i=1; i<fb.r.size(); ++i)
@@ -104,6 +108,10 @@ AlgebraicFactorBase::AlgebraicFactorBase(ZZ bound, const Polynomial& _f)
             ZZ_p x = evalp(poly, r);
             if(rep(x) == 0)
             {
+                if(a[i].size() == 0)
+                {
+                    a[i].push_back(q);
+                }
                 a[i].push_back(r);
                 ++num;
 #ifdef GEN_DEBUG
@@ -112,8 +120,4 @@ AlgebraicFactorBase::AlgebraicFactorBase(ZZ bound, const Polynomial& _f)
             }
         }
     }
-}
-
-long AlgebraicFactorBase::getTotalSize()const {
-    return num+fb.r.size();
 }

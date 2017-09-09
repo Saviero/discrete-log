@@ -5,7 +5,7 @@
 #include<vector>
 #include<utility>
 #include<fstream>
-
+//#define DEBUG
 using namespace NTL;
 
 class FactorBase {
@@ -18,6 +18,7 @@ public:
     FactorBase();
     void setBound(ZZ bound);
     bool factor(std::vector<long>& f, const ZZ& n)const;
+    unsigned long getSize()const;
 };
 
 inline ZZ rema(ZZ& q, ZZ a, ZZ b);
